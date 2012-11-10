@@ -1,0 +1,63 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+
+. $CMC_HOME/tools/f/compile_functions
+
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} :: ${CLR}Main${toff} >>>
+Repos found: ${CLR}$FOUND_NUM${toff} 
+
+	${CLR}1${toff}) Setup cyanogenmod repo (GB/ICS)
+	${CLR}2${toff}) Sync/Update repo (GB/ICS)
+	${CLR}3${toff}) Choose your manufacturer
+	${CLR}4${toff}) Choose your model
+	${CLR}5${toff}) Extract Files: ${CLR}$DEVICE_MOD${toff}
+	-----
+	${CLR}6${toff}) Extra Repo Settings
+	${CLR}7${toff}) Compile cyanogenmod (GB/ICS)
+	-----
+	${CLR}8${toff}) Undo current changes: ${CLR}$CHANGE_COUNT${toff}
+	-----
+	${CLR}P${toff}) CMC Plugins
+	${CLR}97${toff}) Toggle git/https syncing
+	${CLR}98${toff}) Change theme
+	${CLR}99${toff}) CMC Updates: $UPDATE_MSG
+	-----
+	${CLR}X${toff}) exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue"
+echo -ne "${CLR}>${toff} "
+
+read option
+case $option in
+	1)
+		. $CMC_HOME/menu_items/setup_cm_repo.menu;;
+	2)
+		. $CMC_HOME/menu_items/update_cm_repo.menu;;
+	3)
+		. $CMC_HOME/menu_items/ch_manufacturer.menu;;
+	4)
+		. $CMC_HOME/menu_items/ch_model.menu;;
+	5)
+		. $CMC_HOME/menu_items/extract_files.menu;;
+	6)
+		. $CMC_HOME/menu_items/extra_repo_settings.menu;;
+	7)
+		. $CMC_HOME/menu_items/compile_cm_repo.menu;;
+	8)
+		. $CMC_HOME/menu_items/undo_repo_changes.menu;;
+	97)
+		. $CMC_HOME/menu_items/toggle_git_https.menu;;
+	98)
+		. $CMC_HOME/menu_items/ch_theme.menu;;
+	99)
+		. $CMC_HOME/menu_items/update_cmc.menu;;
+	p|P)
+		. $CMC_HOME/menu_items/run_plugins.menu;;
+	x|X)
+		echo "Goodbye!"
+		chk_tmp
+		exit 0;;
+	*)
+		$MAIN;;
+esac

@@ -1,0 +1,21 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+# update_cmc  by ak_hepcat (ak.hepcat@gmail.com)
+if [ -z "${CMC_FUNCTIONS}" ];
+then
+	. $CMC_HOME/tools/f/compile_functions
+fi
+
+get_colors_set
+
+if [ -n "$NVER" -a -n "$RVER" ]; then
+	if [ "$NVER" != "$RVER" ]; then
+		echo -e ""$CLR"Updating CMCompiler"$toff""
+ 		cd $CMC_HOME
+ 		git pull
+ 	else
+ 		echo -e ""$CLR"CMCompiler"$toff" is up-to-date"
+ 	fi
+else
+	echo -e ""$CLR"Can't determine version"$toff""
+fi

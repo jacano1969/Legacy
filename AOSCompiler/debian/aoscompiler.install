@@ -1,0 +1,5 @@
+share/aoscompiler usr/bin/
+share/aoscPy/* usr/share/aoscompiler/aoscPy/
+share/images/* usr/share/aoscompiler/images/
+share/desktop/* usr/share/applications/
+share/manpage/* usr/share/man/man7/

@@ -1,0 +1,34 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+$CMC_HOME/tools/f/compile_functions
+export AOSP_HOME="$CMC_PLUGINS/AOSP"
+chk_cmc_config
+chk_adb_running
+
+clear
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} :: Main :: Plugins :: ${CLR}AOSP${toff} >>>
+Repos found: ${CLR}$FOUND_NUM${toff}
+
+	${CLR}1${toff}) Setup aosp repo
+	${CLR}2${toff}) Compile aosp repo
+	-----
+	${CLR}B${toff}) back to plugins
+	${CLR}X${toff}) exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue"
+echo -n "> "
+
+read option
+case $option in
+	1)
+		. $AOSP_HOME/menu_items/setup_aosp_repo.menu;;
+	2)
+		. $AOSP_HOME/menu_items/compile_aosp_repo.menu;;
+	b|B)
+		. $CMC_HOME/menu_items/run_plugins.menu;;
+	x|X)
+		echo "Goodbye!"
+		chk_tmp
+		exit 0;;
+esac

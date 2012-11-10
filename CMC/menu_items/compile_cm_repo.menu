@@ -1,0 +1,39 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+. $CMC_HOME/tools/f/compile_functions
+chk_cmc_config
+chk_adb_running
+
+clear
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} :: Main :: ${CLR}Compile Cyanogenmod${toff}>>>
+Repos found: ${CLR}$FOUND_NUM${toff}	
+
+	${CLR}Y${toff}/n) This will compile Cyanogenmod
+	Should we proceed with this?
+
+	${CLR}Note:${toff}
+	Default is yes type \"n\" or \"no\" to stop this from happening.
+	You can also press \"0\" to return to the main menu without changes.
+	-----
+	${CLR}B${toff}) back to main menu
+	${CLR}X${toff}) exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue (${CLR}Y${toff}/n)"
+echo -n "> "
+
+read option
+case $option in
+	[nN] | [n|N][O|o] )
+		clear
+		echo "No changes have been made"
+		sleep 1
+		$MAIN;;
+	b|B)
+		$MAIN;;
+	x|X)
+		echo "Goodbye!"
+		exit 1;;
+	*)
+		compile_cm;;
+esac

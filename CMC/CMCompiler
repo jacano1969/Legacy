@@ -1,0 +1,47 @@
+#!/bin/bash
+
+export CMC_HOME=${CMC_HOME:-$(dirname $0)}
+if [ -n "${CMC_HOME##*/*}" ];
+then
+	#dirname didn't give us a full path, try PWD
+	export CMC_HOME=$(pwd -P)
+fi
+
+. $CMC_HOME/tools/f/compile_exports
+. $CMC_HOME/tools/f/compile_functions
+
+function cyanogenmod(){
+COLUMNS=$(tput cols)
+ROWS=$(tput lines)
+TOP=$(($ROWS / 2 - 8))
+
+w=$(( $COLUMNS / 2 - 35))
+clear
+for i in $(seq 1 "$TOP"); do echo; done
+echo " _______                                                          _ " | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo "(_______) Welcome to the                                         | |" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo " _      _   _ _____ ____   ___   ____ _____ ____  ____   ___   __| |" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo "| |    | | | (____ |  _ \ / _ \ / _  | ___ |  _ \|    \ / _ \ / _  |" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo "| |____| |_| / ___ | | | | |_| ( (_| | ____| | | | | | | |_| ( (_| |" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo " \______)__  \_____|_| |_|\___/ \___ |_____)_| |_|_|_|_|\___/ \____|" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo "       (____/                  (_____|" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo "                                             Compiler" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo "By: Lithid" | while IFS= read -r line; do printf "%${w}s %s\n" '' "$line"; done
+echo
+}
+
+clear
+for i in $(seq 1 "$TOP"); do echo; done
+cyanogenmod
+for i in $(seq 1 "$TOP"); do echo; done
+chk_tmp
+get_colors_set
+chk_cmc_config
+chk_adb_running
+undo_repo_changes
+chk_repo_path_conf
+check_update_fn
+echo
+read -sn 1 -p "  Press any key to continue..."
+clear
+$MAIN

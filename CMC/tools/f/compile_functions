@@ -1,0 +1,649 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+
+. $CMC_HOME/tools/f/compile_exports
+
+#######################################################
+#
+# Start of the functions
+#
+#######################################################
+if [ ! -f $CMC_LOCAL ]; then
+	mkdir -p $CMC_LOCAL
+fi
+
+function chk_tmp() {
+if [ -f $TMPX ] || [ -f $TMP_REPO ]; then
+	rm -f $TMPX
+	rm -f $TMP_REPO
+fi
+}
+
+function get_colors_set() {
+ # Color off
+export toff="\e[0m"
+# Colors
+export tblk="\e[0;90m" # Black
+export tred="\e[0;91m" # Red
+export tgrn="\e[0;92m" # Green
+export tylw="\e[0;93m" # Yellow
+export tblu="\e[0;94m" # Blue
+export tprpl="\e[0;95m" # Purple
+export tcyn="\e[0;96m" # Cyan
+export twht="\e[0;97m" # White
+
+export CLR="$tgrn"
+if [ ! -f $CMC_CONFIG ]; then
+	touch $CMC_CONFIG
+fi
+CONF_COLOR_CHK=$(grep COLOR $CMC_CONFIG |wc -l)
+CONF_COLOR_SET=$(grep COLOR $CMC_CONFIG |awk '{print $2}')
+if [ "$CONF_COLOR_CHK" -eq "1" ]; then
+	export CLR="$CONF_COLOR_SET"
+fi
+}
+
+function check_update_fn() {
+chk_git=$(which git |wc -l)
+if [ "${chk_git}" -eq "0" ]; then
+	export UPDATE_MSG=""$tred"Error"$toff""
+else
+	export NVER="$(cd $CMC_HOME; git log -1 --numstat | grep commit | awk '{print $2}')"
+	export RVER="$(cd $CMC_HOME; git ls-remote https://github.com/lithid/CMC.git HEAD 2>/dev/null | awk '{print $1}')"
+	if [ -n "$NVER" -a -n "$RVER" ]; then
+		if [ "$NVER" != "$RVER" ]; then
+			export UPDATE_MSG=""$CLR"Available"$toff""
+		else
+			export UPDATE_MSG="Up-to-date"
+		fi
+	else
+		export UPDATE_MSG=""$tred"Error"$toff""
+	fi
+fi
+
+}
+
+function get_sp_branch_list() {
+mkdir $TMP_AF
+cd $TMP_AF
+git clone $SP_GIT manifest &>> /dev/null
+cd manifest
+git branch -a |cut -d"/" -f3 |grep -v "*" |grep -v HEAD >> $TEMPA
+cd $REPO_PATH
+rm -rf $TMP_AF
+}
+
+function list_sp_branch() {
+chk_tmp
+COUNT=1
+ls_files=$(cat $TEMPA)
+for x in $ls_files; do
+	echo_list=$(echo -e ""$CLR"${COUNT}"$toff") $x")
+        echo "	"$echo_list"" >> $TMPX
+        let COUNT=COUNT+1
+done
+chmod a+x $TMPX
+}
+
+function chk_cmc_config() {
+if [ ! -f $CMC_CONFIG ]; then
+	touch $CMC_CONFIG
+fi
+
+CONF_X="DEVICE_MAN"
+CHK_MAN_CONF=$(grep $CONF_X $CMC_CONFIG | awk '{print $2}')
+CHK_MAN_CONF_W=$(grep $CONF_X $CMC_CONFIG | awk '{print $2}' |wc -l)
+if [ "$CHK_MAN_CONF_W" -eq "1" ]; then
+	export DEVICE_MAN=$CHK_MAN_CONF
+else
+	export DEVICE_MAN="Unknown"
+fi
+CONF_X2="DEVICE_MOD"
+CHK_MOD_CONF=$(grep $CONF_X2 $CMC_CONFIG | awk '{print $2}')
+CHK_MOD_CONF_W=$(grep $CONF_X2 $CMC_CONFIG | awk '{print $2}' |wc -l)
+if [ "$CHK_MOD_CONF_W" -eq "1" ]; then
+	export DEVICE_MOD=$CHK_MOD_CONF
+else
+	export DEVICE_MOD="Unknown"
+fi
+}
+
+function chk_repo_path_conf() {
+chk_tmp
+if [ ! -f $CMC_CONFIG ]; then
+	touch $CMC_CONFIG
+fi
+CMC_CONFIG_REPO_CHK=$(grep REPO $CMC_CONFIG |wc -l)
+if [ "$CMC_CONFIG_REPO_CHK" -eq "1" ];then
+	CMC_CONFIG_REPO=$(grep REPO $CMC_CONFIG |awk '{print $2}')
+	export REPO_PATH=$CMC_CONFIG_REPO
+	if [ -z "$FOUND_NUM" ]; then
+		export FOUND_NUM=$(find $CMC_CONFIG_REPO -maxdepth 2 -type d -iname .repo |wc -l)
+	fi
+	export CONFIGED="$CMC_CONFIG_REPO_CHK"
+else
+	export REPO_PATH="None"
+	export FOUND_NUM="None"
+	export CONFIGED="No"
+fi
+}
+
+function list_em() {
+chk_tmp
+COUNT=1
+ls_files=$(ls $MORE_PATH |sort)
+for x in $ls_files; do
+	echo_list=$(echo -e ""$CLR"${COUNT}"$toff") $x")
+        echo "	"$echo_list"" >> $TMPX
+        let COUNT=COUNT+1
+done
+chmod a+x $TMPX
+}
+
+function process_man_list() {
+GET_LIST=$(sed -n "$option"p $TMPX |awk '{print $2}')
+GET_LIST_W=$(sed -n "$option"p $TMPX |cut -d")" -f"1")
+GET_LIST_CMC_SED=$(grep DEVICE_MAN $CMC_CONFIG)
+if [ "$GET_LIST_W" != "0" ]; then
+	DEVICE_MAN=$(echo "$GET_LIST")
+	clear
+	echo -e "Your Manufacturer is "$CLR"$DEVICE_MAN"$toff""
+	GET_LIST_CMC=$(grep DEVICE_MAN $CMC_CONFIG |wc -l)
+	if [ "$GET_LIST_CMC" -eq "1" ]; then
+		sed s/"$GET_LIST_CMC_SED"/"DEVICE_MAN: $DEVICE_MAN"/g $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+		sed ""$(grep -n0 DEVICE_MOD $CMC_CONFIG |cut -d":" -f"1")"d" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+	else
+		echo "DEVICE_MAN: $DEVICE_MAN" >> $CMC_CONFIG
+	fi
+	sleep 2
+	$MAIN
+else
+	export DEVICE_MAN="Unknown"
+	clear
+	echo -e "Your Manufacturer is "$CLR"$DEVICE_MAN"$toff", please try again"
+	sleep 2
+	. $CMC_HOME/menu_items/ch_manufacturer.menu
+fi
+chk_tmp
+}
+
+function process_mod_list() {
+GET_LIST=$(sed -n "$option"p $TMPX |awk '{print $2}')
+GET_LIST_W=$(sed -n "$option"p $TMPX |cut -d")" -f"1")
+GET_LIST_CMC_SED=$(grep DEVICE_MOD $CMC_CONFIG)
+if [ "$GET_LIST_W" != "0" ]; then
+	DEVICE_MOD=$(echo "$GET_LIST")
+	clear
+	echo -e "Your model is "$CLR"$DEVICE_MOD"$toff""
+	GET_LIST_CMC=$(grep DEVICE_MOD $CMC_CONFIG |wc -l)
+	if [ "$GET_LIST_CMC" = "1" ]; then
+		sed s/"$GET_LIST_CMC_SED"/"DEVICE_MOD: $DEVICE_MOD"/g $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+	else
+		echo "DEVICE_MOD: $DEVICE_MOD" >> $CMC_CONFIG
+	fi
+	sleep 2
+	$MAIN
+else
+	export DEVICE_MOD="Unknown"
+	clear
+	echo -e "Your model is "$CLR"$DEVICE_MOD"$toff", please try again"
+	sleep 2
+	. $CMC_HOME/menu_items/ch_model.menu
+fi
+}
+
+function process_plugin_list() {
+GET_LIST=$(sed -n "$option"p $TMPX |awk '{print $2}')
+GET_LIST_W=$(sed -n "$option"p $TMPX |cut -d")" -f"1")
+if [ "$GET_LIST_W" != "0" ]; then
+	PLUGIN=$(echo "$GET_LIST")
+	. $CMC_PLUGINS/$PLUGIN/main.plug
+	chk_tmp
+else
+	clear
+	echo -e ""$CLR"Unable"$toff" to find that plugin, please try again"
+	chk_tmp
+	sleep 2
+	. $CMC_HOME/menu_items/run_plugins.menu
+fi
+}
+
+function apply_theme_process() {
+CHK_THEME_CONF=$(grep COLOR $CMC_CONFIG)
+CHK_THEME_CONF_W=$(grep COLOR $CMC_CONFIG |wc -l)
+if [ "$CHK_THEME_CONF_W" -eq "1" ]; then
+	X=$(echo "$CHK_THEME_CONF" |awk '{print $2}')
+	echo -e "Your new theme is "$CLR"$COLOR_DESC"$toff""
+	sed "s/COLOR: .*/COLOR: \\$CUST_COLOR/g" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+else
+	echo -e "Your new theme is "$CLR"$COLOR_DESC"$toff""
+	echo "COLOR: $CUST_COLOR" >> $CMC_CONFIG
+fi
+sleep 1
+}
+
+function chk_adb_running() {
+chk_adb=$(adb devices 2>$NULL |grep device |grep -v attached |wc -l)
+if [ "$chk_adb" != "1" ]; then
+	export ADB_MSG=""$tred"N/A"$toff""
+else
+	export ADB_MSG=""$CLR"Running"$toff""
+fi
+}
+
+function reposync() {
+clear
+echo "This will remove any modifications done by the CMC, like removing languages or wallpapers."
+echo -n "Are you sure? (Y/n) > "
+read response
+case $response in
+	[n|N])
+		$MAIN;;
+	*)
+		undo_repo_changes RM_NOW
+		cd $REPO_PATH
+		$REPO sync
+		echo
+		read -sn 1 -p "Press any key to go back to main menu...";;
+esac
+clear
+}
+
+function reposync_update() {
+CHK_REPO_4_SYNC=$(ls $REPO_PATH |wc -l)
+if [ "$CHK_REPO_4_SYNC" -lt "5" ]; then
+	clear
+	echo "You need to setup the repo first"
+	read -sn 1 -p "Press any key to go back to sync/update menu..."
+else
+	reposync
+fi
+}
+
+function process_branch_list() {
+GET_LIST=$(sed -n "$option"p $TMPX |awk '{print $2}')
+GET_LIST_W=$(sed -n "$option"p $TMPX |cut -d")" -f"1")
+if [ ! -z "$option" ]; then
+	export BRANCH=$(echo "$GET_LIST")
+	chk_tmp
+else
+	export BRANCH="$D_BRANCH"
+	chk_tmp
+fi
+}
+
+function setup_cm_repo() {
+if [ -f $TEMPA ]; then
+	rm -rf $TEMPA
+fi
+echo "Checking for repo installation..."
+CMC_CONFIG_REPO=$(grep REPO $CMC_CONFIG |awk '{print $2}')
+CHK_4_REPO=$(find $CMC_CONFIG_REPO -maxdepth 2 -type d -iname .repo |wc -l)
+CMC_CONFIG_REPO_CHK=$(grep REPO $CMC_CONFIG |wc -l)
+if [ "$REPO_PATH" = "None" ] && [ "$FOUND_NUM" = "None" ];then
+	clear
+	echo "Looking for repo..."
+	CHK_4_REPO_PATH=$(find $CMC_CONFIG_REPO -type d -iname .repo |cut -d"." -f"1")
+	if [ "$CHK_4_REPO" -eq "0" ]; then
+		echo "No found repos. Lets do this now."
+		echo "Please specify a repo path you would like:"
+		echo "Default: $DEFAULT_REPO_HOME"
+		echo "Default is only used when none is specified."
+		echo -ne "REPO: > "
+		read response
+		if [ ! -z "$response" ]; then
+			echo "Setting up $response as repo."
+			mkdir -p $response
+			echo "REPO: $response" >> $CMC_CONFIG
+			export REPO_PATH=$response
+		else
+			echo "Setting up a default repo for you here: $DEFAULT_REPO_HOME"
+			mkdir -p $DEFAULT_REPO_HOME
+			echo "REPO: $DEFAULT_REPO_HOME" >> $CMC_CONFIG
+			export REPO_PATH=$DEFAULT_REPO_HOME
+		fi
+		sleep 2
+	elif [ "$CHK_4_REPO" -eq "1" ]; then
+		clear
+		echo "Found repo: $CHK_4_REPO_PATH"
+		echo "REPO: $CHK_4_REPO_PATH" >> $CMC_CONFIG
+		export REPO_PATH=$CHK_4_REPO_PATH
+		sleep 2
+	elif [ "$CHK_4_REPO" -eq "1" ]; then
+		export CHK_4_REPO_PATH_LIST="$CHK_4_REPO_PATH"
+		NUM=1
+		echo "Found mulitple repo paths:"
+		echo "$CHK_4_REPO_PATH_LIST"
+		for x in $CHK_4_REPO_PATH_LIST; do
+			echo "REPO_$NUM $x" >> $CMC_CONFIG
+			let NUM=NUM+1
+		done
+	fi	
+elif [ "$CMC_CONFIG_REPO_CHK" -eq "1" ] && [ "$CHK_4_REPO" -eq "0" ];then
+	clear
+	echo "Found $CMC_CONFIG_REPO in $CMC_CONFIG, but no repo, you will need a repo to use this."
+	echo "Are you sure you want to use this path? No will remove this entry!"
+	echo -n "( Y/n) default: yes > "
+	read response
+	case $response in
+		[nN] | [n|N][O|o] )
+			sed ""$(grep -n0 REPO $CMC_CONFIG |cut -d":" -f"1")"d" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+			$MAIN;;
+		*)
+			export REPO_PATH=$CMC_CONFIG_REPO
+			if [ ! -d $REPO_PATH ]; then
+				mkdir -p $REPO_PATH
+			fi
+	esac
+else
+	export REPO_PATH=$CMC_CONFIG_REPO
+fi
+
+clear
+if [ ! -f $REPO ]; then
+	curl -# $GOG_REPO > $REPO
+fi
+if [ -f $REPO ]; then
+	chmod a+x $REPO
+else
+	clear
+	echo "Couldn't link repo correctly. Check your internet and try again."
+	rm -rf $REPO >> $NULL
+	$MAIN
+fi
+cd $REPO_PATH
+clear
+
+CUSTOM_GIT_CHECK=$(grep CUSTOM_GIT: ~/.cmc/cmc-config |grep -v "#" |wc -l)
+if [ "$CUSTOM_GIT_CHECK" -eq "1" ]; then
+     CUSTOM_GIT=$(grep CUSTOM_GIT: ${CMC_CONFIG} |awk '{print $2}')
+     clear
+     echo -e "Found custom git using ${CLR}${CUSTOM_GIT}${toff}"
+     SP_GIT=${CUSTOM_GIT}
+else
+     SP_GIT=${CM_GIT}
+fi
+get_sp_branch_list
+list_sp_branch
+LIST_BRANCH=$(cat $TMPX)
+export D_BRANCH="gingerbread"
+echo -e "Please choose the branch:
+Default is "$CLR"$D_BRANCH"$toff".
+
+$LIST_BRANCH"
+
+echo -n "> "
+read option
+process_branch_list
+
+clear
+echo -e "Branch is "$CLR"$BRANCH""$toff"
+echo -n "Press enter to continue..."
+read input
+case $input in
+	*)
+		CHK_BRANCH=$(grep BRANCH $CMC_CONFIG |wc -l)
+		if [ "$CHK_BRANCH" -eq "1" ]; then
+			sed ""$(grep -n0 BRANCH $CMC_CONFIG |cut -d":" -f"1")"d" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+			echo "BRANCH: $BRANCH" >> $CMC_CONFIG
+		elif [ "$CHK_BRANCH" -gt "1" ]; then
+			LIST_BRANCH=$(grep BRANCH $CMC_CONFIG | awk '{print $2}')
+			for i in $LIST_BRANCH; do
+				sed ""$(grep -n0 $i $CMC_CONFIG |cut -d":" -f"1")"d" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+			done
+			echo "BRANCH: $BRANCH" >> $CMC_CONFIG
+		elif [ "$CHK_BRANCH" -eq "0" ]; then
+			echo "BRANCH: $BRANCH" >> $CMC_CONFIG
+		else
+			echo "Branch config in $CMC_CONFIG isn't configured correctly"
+			exit 6
+		fi
+		clear
+		$REPO init -u $SP_GIT -b $BRANCH
+		clear
+		echo "Complete!. Please sync from the sync/update menu!"
+		read -sn 1 -p "Press any key to continue..."
+esac
+rm -rf $TEMPA
+}
+
+function run_remove_function() {
+MSG_LEVEL=$1
+if [ "$MSG_LEVEL" = "yes" ]; then
+	clear
+	$SCRIPT
+	echo "$MSG"
+	sleep 1
+elif [ "$MSG_LEVEL" = "no" ]; then
+	clear
+	echo "$MSG"
+	sleep 1
+else
+	echo "Something went wrong with the script... Sorry"
+	sleep 1
+	exit 5
+fi
+}
+
+function use_custom_languages() {
+clear
+echo "Please specify the languages you would like to enclude.
+Separate each language with a space. Nothing more nothing less!
+
+Note: I have added en_US by default, do not added it yourself!!
+
+"
+echo -n "> "
+read response
+if [ ! -z "$response" ]; then
+	clear
+	export LANGS="$response en_US"
+	echo "Languages are set for \"$LANGS\""
+else
+	clear
+	export LANGS="en_US"
+	echo "Nothing specified, only using \"$LANGS\""
+fi
+
+clear
+export MSG="Languages have been removed!"
+export SCRIPT="$CMC_SCRIPTS/build_language_only"
+run_remove_function yes
+}
+
+function extract_files_sh() {
+if [ "$DEVICE_MOD" = "Unknown" ]; then
+	echo "Your model is unknown, this won't work."
+	sleep 2
+	$MAIN
+elif [ "$DEVICE_MAN" = "Unknown" ]; then
+	echo "Your manufacturer is unknown, this won't work."
+	sleep 2
+	$MAIN
+else
+	chk_adb_running
+	if [ "$chk_adb" -ne "1" ]; then
+		clear
+		echo "Sorry adb isn't currently running. We can't do this right now."
+		sleep 2
+	else
+		cd $REPO_PATH/device/$DEVICE_MAN/$DEVICE_MOD
+		if [ -f extract-files.sh ]; then
+			./extract-files.sh
+			clear
+			echo -e "Files for "$CLR"$DEVICE_MOD"$toff" have been extracted!"
+		else
+			echo -e "Attention: "$CLR"$DEVICE_MOD"$toff" is an unsupported device, can't extract files from device!"
+		fi
+		echo
+		read -sn 1 -p "Press any key to continue..."
+		cd $REPO_PATH
+	fi
+fi
+}
+
+function finish_the_repo(){
+cd $REPO_PATH
+
+if [ "$(ps -ef |grep -c "/usr/bin/X")" -gt "1" ]; then
+	if [ -f $(which notify-send) ]; then
+		notify-send -i terminal "CMC Complete" "CMC completed the cyanogenmod rom
+
+Path: $(find $REPO_PATH/out -type f -iname update-*-signed.zip)"
+	fi
+fi
+chk_tmp &>> $NULL
+
+clear
+echo -e "Complete! Press enter to continue..."
+read response
+case $response in
+	*)$MAIN;;
+esac
+}
+
+function compile_cm() {
+export WHICH_REPO=$(grep BRANCH $CMC_CONFIG |awk '{print $2}')
+if [ "$WHICH_REPO" = "gingerbread" ]; then
+	export K_PATH="$REPO_PATH/vendor/cyanogen/products/common_versions.mk"
+elif [ "$WHICH_REPO" = "ics" ]; then
+	export K_PATH="$REPO_PATH/vendor/cm/config/common.mk"
+else
+	export K_PATH="null"
+fi
+if [ -f $K_PATH ]; then
+	CHK_KANG=$(grep kang $CMC_DELETED |wc -l)
+	if [ "$CHK_KANG" -eq "0" ]; then
+		export REM_BACK="$CMC_BACKUP/remove_cmc_kang"
+		if [ ! -d $REM_BACK ]; then
+			mkdir -p $REM_BACK
+		fi
+		UNIQ=$(echo `</dev/urandom tr -dc A-Za-z0-9 | head -c20`)
+		cp $K_PATH $REM_BACK/$UNIQ
+		sed -i 's/KANG/CMC/g' $K_PATH
+		echo "Replaced kang with cmc" >> $CMC_DELETED
+		echo "cp $REM_BACK/$UNIQ $K_PATH" >> $CMC_RESTORE
+	fi
+fi
+if [ "$WHICH_REPO" = "gingerbread" ]; then
+
+	if [ ! -f $REPO_PATH/vendor/cyanogen/proprietary/RomManager.apk ]; then
+		$REPO_PATH/vendor/cyanogen/get-rommanager
+	fi
+
+	cd $REPO_PATH
+	. build/envsetup.sh
+	make installclean
+
+	brunch $DEVICE_MOD
+	STATUS=$(echo $?)
+	if [ "$STATUS" -ne "0" ]; then
+		echo "There was an error while building."
+		echo -ne "Do you want to try again? ("$CLR"Y"$toff"/n)"
+		echo -n "> "
+		read response
+		case $response in
+			y | Y )
+				cd $REPO_PATH
+				compile_cm;;
+			n | N )
+				$MAIN;;
+		esac
+	fi
+	finish_the_repo
+elif [ "$WHICH_REPO" = "ics" ]; then
+
+	cd $REPO_PATH/vendor/cm
+	./get-prebuilts
+	cd $REPO_PATH
+
+	. build/envsetup.sh
+	make installclean
+
+	brunch $DEVICE_MOD
+	STATUS=$(echo $?)
+	if [ "$STATUS" -ne "0" ]; then
+		echo "There was an error while building."
+		echo -ne "Do you want to try again? ("$CLR"Y"$toff"/n)"
+		echo -n "> "
+		read response
+		case $response in
+			y | Y )
+				cd $REPO_PATH
+				compile_cm;;
+			n | N )
+				$MAIN;;
+		esac
+	fi
+	finish_the_repo
+else
+	clear
+	echo "There appears to be an issue with your configuration."
+	echo "Please look at $CMC_CONFIG."
+	sleep 2
+	$MAIN
+fi
+}
+
+function find_toggle_git_https() {
+MANIFEST=$(find $REPO_PATH/.repo -type f -iname default.xml)
+CONFIG=$(find $REPO_PATH/.repo -type f -iname config |grep manifests.git)
+CHK_TOGGLE=$(grep fetch $MANIFEST |grep -v "android.googlesource.com" |head -n1 |cut -d: -f1 |cut -d"\"" -f2)
+}
+
+function toggle_git_https() {
+find_toggle_git_https
+
+if [ "$CHK_TOGGLE" = "https" ]; then
+	sed -iE '/googlesource/!s/https:\/\//git:\/\//g' $MANIFEST &>> /dev/null
+	sed -iE '/googlesource/!s/https:\/\//git:\/\//g' $CONFIG &>> /dev/null
+	clear
+	echo -e ""$CLR"git"$toff" is now on!"
+	sleep 1
+elif [ "$CHK_TOGGLE" = "git" ]; then
+	sed -iE '/googlesource/!s/git:\/\//https:\/\//g' $MANIFEST &>> /dev/null
+	sed -iE '/googlesource/!s/git:\/\//https:\/\//g' $CONFIG &>> /dev/null
+	clear
+	echo -e ""$CLR"https"$toff" is now on!"
+	sleep 1
+else
+	clear
+	echo "Something went wrong!"
+	sleep 1
+fi
+}
+
+function undo_repo_changes() {
+if [ ! -f $CMC_DELETED ]; then
+	export CHANGE_COUNT="0"
+	export CHANGE_LIST="	None"
+else
+	CHANGE_COUNT=$(awk '{print $2}' $CMC_DELETED | wc -l)
+	CHANGE_LIST=$(cat $CMC_DELETED)
+	CHANGE_PATH=$(awk '{print $1}' $CMC_DELETED)
+	if [ "$CHANGE_COUNT" -lt "1" ]; then
+		export CHANGE_COUNT="0"
+		export CHANGE_LIST="	None"
+	fi
+fi
+if [ "$1" = "RM_NOW" ]; then
+	if [ ! -f $CMC_RESTORE ]; then
+		clear
+		echo "No File Nothing to do."
+		sleep 2
+	else
+		clear
+		echo "Removing changes now."
+		chmod a+x $CMC_RESTORE
+		bash $CMC_RESTORE
+		rm -rf $CMC_RESTORE
+		rm -rf $CMC_BACKUP
+		rm -rf $CMC_DELETED
+	fi
+fi
+}
+#######################################################
+#
+# End of the functions
+#
+#######################################################

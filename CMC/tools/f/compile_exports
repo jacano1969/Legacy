@@ -1,0 +1,29 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+export MAIN="$CMC_HOME/menu_items/main.menu"
+export SETUP=". $CMC_HOME/menu_items/setup_cm_repo.menu"
+export SYNC=". $CMC_HOME/menu_items/update_cm_repo.menu"
+export CMC_LOCAL="$HOME/.cmc"
+export CMC_CONFIG="$CMC_LOCAL/cmc-config"
+export CMC_TOOLS="$CMC_HOME/tools/t"
+export CMC_SCRIPTS="$CMC_HOME/tools/s"
+export CMC_FUNCTIONS="$CMC_HOME/tools/f"
+export CMC_PLUGINS="$CMC_HOME/plugins"
+export CMC_DELETED="$CMC_LOCAL/CMC_DELETED_FILES"
+export CMC_RESTORE="$CMC_LOCAL/CMC_RESTORE_FILES"
+export CMC_BACKUP="$CMC_LOCAL/BACKUP"
+hash repo &> /dev/null
+if [ $? -eq 1 ]; then
+	export REPO="$CMC_TOOLS/repo"
+else
+	export REPO="$(which repo)"
+fi
+export TMPX="/tmp/CM_BUILD"
+export TMP_REPO="/tmp/found_repos"
+export TMP_C="/tmp/cm_compile.log"
+export NULL="/dev/null"
+export CM_GIT="https://github.com/CyanogenMod/android.git"
+export DEFAULT_REPO_HOME="$HOME/Development/CM-GB"
+export TMP_AF="/tmp/SP_BRANCH"
+export TEMPA="/tmp/A_BUILD"
+export GOG_REPO="https://dl-ssl.google.com/dl/googlesource/git-repo/repo"

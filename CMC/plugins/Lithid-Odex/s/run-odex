@@ -1,0 +1,76 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+MH="$CMC_HOME/plugins/Lithid-Odex"
+H="$CMC_HOME/plugins/Lithid-Odex/.ODEX"
+CODE="sh /sdcard/odex"
+CMD="adb shell"
+DW="dexopt-wrapper"
+OS="odex"
+AP="system/app"
+FW="system/framework"
+FL="$AP $FW"
+
+if [ "$chk_adb" != "1" ]; then
+	clear
+	echo "adb isn't running we can't do this. Going to the main menu."
+	sleep 1
+	$MAIN
+fi
+
+cd $MH
+
+for x in $FL; do
+if [ ! -d $H/$x ]; then
+	mkdir -p $H/$x
+fi
+done
+
+function del_dex() {
+ZIPS=$(find $H -type f -iname *.jar && find $H -type f -name *.apk)
+for i in $ZIPS; do
+	zip -d $i classes.dex
+done
+}
+
+function push_files() {
+adb remount
+adb push $MH/t/$DW /system/bin/$DW
+adb shell chmod 0755 /system/bin/$DW
+adb push $MH/s/$OS /sdcard/$OS
+adb shell chmod 0755 /sdcard/$OS
+}
+
+function pull_files() {
+cd $H/$AP/
+adb pull /$AP/
+cd $H/$FW
+adb pull /$FW/
+cd $H
+}
+
+function push_finished_files() {
+adb remount
+adb push $H/$AP /$AP
+adb push $H/$FW /$FW
+}
+
+function clean_up() {
+if [ -d $H ]; then
+	rm -rf $H/$AP/*
+	rm -rf $H/$FW/*
+fi
+}
+
+# Process it all
+clean_up
+push_files
+$CMD $CODE
+pull_files
+del_dex
+push_finished_files
+
+clear
+echo "Odexing is complete!"
+echo -e "I have kept the odex files locally for your pleasure! "$CLR">"$toff" $H "$CLR"<"$toff" enjoy!"
+read -sn 1 -p "Press any key to go back to main menu..."
+$MAIN

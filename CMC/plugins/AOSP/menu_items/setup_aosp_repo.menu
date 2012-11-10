@@ -1,0 +1,42 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+. $CMC_HOME/tools/f/compile_functions
+. $AOSP_HOME/s/aosp_functions
+chk_cmc_config
+chk_adb_running
+
+clear
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} Main :: Plugins :: AOSP :: ${CLR}Setup aosp repo${toff} >>>
+Repos found: ${CLR}$FOUND_NUM${toff}
+
+	${CLR}Y${toff}/n) This will setup the aosp repo.
+	Should we proceed with this?
+
+        Repos configured in ~/.cmcrc: ${CLR}$CONFIGED${toff}
+
+	${CLR}Note:${toff}
+	Default is yes type \"n\" or \"no\" to stop this from happening.
+	You can also press \"0\" to return to the main menu without changes.
+	-----
+	${CLR}B${toff}) back to aosp plugin
+	${CLR}X${toff}) exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue (${CLR}Y${toff}/n)"
+echo -n "> "
+
+read option
+case $option in
+	[nN] | [n|N][O|o] )
+		MSG="Languages have not been removed!"
+		run_remove_function no
+		. $CMC_PLUGINS/AOSP/main.plug;;
+	b|B)
+		. $CMC_PLUGINS/AOSP/main.plug;;
+	x|X)
+		echo "Goodbye!"
+		exit 0;;
+	*)
+		setup_aosp_repo
+		$MAIN;;
+esac

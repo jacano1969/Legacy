@@ -1,0 +1,45 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+# Modded by Jonathan aka Dope M.S.R.
+. $CMC_HOME/tools/f/compile_functions
+chk_cmc_config
+chk_adb_running
+
+clear
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} :: Main :: ${CLR}Sync/Update Cyanogenmod${toff} >>>
+Repos found: ${CLR}$FOUND_NUM${toff}	
+
+	${CLR}S${toff}) ${CLR}S${toff}ync - This will sync the Cyanogenmod Repo.
+		  "$tred"NOTE:${toff} This can also be used to FORCE a repo sync
+			and will remove any modifications done by CMC.
+
+	${CLR}U${toff}) ${CLR}U${toff}pdate - this will update the Cyanogenmod Repo.
+
+	-----
+	${CLR}B${toff}) Back to the Main Menu
+	${CLR}X${toff}) Exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue:"
+echo -n "> "
+
+read option
+case $option in
+	b|B)
+		$MAIN;;
+	s|S)
+		reposync
+		$MAIN;;
+	x|X)
+		echo "Goodbye!"
+		exit 0;;
+	u|U)
+		reposync_update
+		# Get time to read reposync_update messages
+		$MAIN;;
+	*)
+		clear
+		echo "You need to choose an option first"
+		read -sn 1 -p "Press any key to go back to sync/update menu..."
+		$SYNC;;
+esac

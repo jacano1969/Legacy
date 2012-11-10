@@ -1,0 +1,35 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+
+. $CMC_HOME/tools/f/compile_functions
+COUNT="0"
+
+if [ "$1" = "--check" ]; then
+	clear
+	echo "Please input your package list"
+	echo -n "> "
+	read response
+	PKG_LIST=(${reponse})
+	clear
+	echo "What is your  package check command?"
+	echo "Only the command up till the package name. Example: pacman -Q for archlinux"
+	echo -n "> "
+	read reponse
+	COUNT="0"
+	for x in ${PKG_LIST[@]}; do
+		$response $x
+		if [ "$?" -ne "0" ]; then
+			let COUNT=COUNT+1
+		fi
+	done
+	if [ "$COUNT" -gt "1" ]; then
+		export PKG_COUNT="Missing ${tred}$COUNT${toff}"
+	else
+		export PKG_COUNT="${CLR}Packages good{toff}"
+	fi
+elif [ "$1" = "--install" ]; then
+	clear
+	echo "This option doesn't work yet"
+	read -sn 1 -p "Press any key to go back to setup menu..."
+else
+fi

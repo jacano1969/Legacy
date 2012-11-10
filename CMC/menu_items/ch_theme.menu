@@ -1,0 +1,65 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+. $CMC_HOME/tools/f/compile_functions
+chk_cmc_config
+chk_adb_running
+
+clear
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} :: Main :: ${CLR}Change theme${toff}>>>
+Repos found: ${CLR}$FOUND_NUM${toff}	
+
+	${CLR}1${toff}) Black
+	${CLR}2${toff}) Red
+	${CLR}3${toff}) Green
+	${CLR}4${toff}) Yellow
+	${CLR}5${toff}) Blue
+	${CLR}6${toff}) Purple
+	${CLR}7${toff}) Cyan
+	${CLR}8${toff}) White
+	-----
+	${CLR}B${toff}) back to main menu
+	${CLR}X${toff}) exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue"
+echo -n "> "
+
+read option
+case $option in
+	1)
+		CUST_COLOR="$tblk"
+		COLOR_DESC="Black";;
+	2)
+		CUST_COLOR="$tred"
+		COLOR_DESC="Red";;
+	3)
+		CUST_COLOR="$tgrn"
+		COLOR_DESC="Green";;
+	4)
+		CUST_COLOR="$tylw"
+		COLOR_DESC="Yellow";;
+	5)
+		CUST_COLOR="$tblu"
+		COLOR_DESC="Blue";;
+	6)
+		CUST_COLOR="$tprpl"
+		COLOR_DESC="Purple";;
+	7)
+		CUST_COLOR="$tcyn"
+		COLOR_DESC="Cyan";;
+	8)
+		CUST_COLOR="$twht"
+		COLOR_DESC="White";;
+	b|B)
+		$MAIN;;
+	x|X)
+		echo "Goodbye!"
+		exit 1;;
+	*)
+		CUST_COLOR="$ltgrn"
+		COLOR_DESC="Light Green";;
+esac
+
+apply_theme_process
+get_colors_set
+$MAIN

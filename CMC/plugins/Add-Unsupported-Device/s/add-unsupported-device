@@ -1,0 +1,70 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+function get_info() {
+clear
+echo -ne "What is your device manufacturer? "$CLR">"$toff" "
+read add_man
+
+clear 
+echo -ne "What is your device model? "$CLR">"$toff" "
+read add_mod
+
+clear
+echo "What is the repo url for your device tree?"
+echo "Example: https://github.com/CyanogenMod/android_device_htc_supersonic"
+echo -ne ""$CLR">"$toff" "
+read dev_repo_url
+
+}
+
+get_info
+
+clear
+echo -e "Here is the information I gathered:
+Device: "$CLR"$add_mod"$toff"
+Manufacturer: "$CLR"$add_man"$toff"
+Repo: "$CLR"$dev_repo_url"$toff"
+Full path for clone: "$CLR"$REPO_PATH/device/$add_man/$add_mod"$toff""
+echo
+echo -ne "Is this correct? ("$CLR"Y"$toff"/n) (default "$CLR"yes"$toff") >"
+read response
+case $response in
+	[nN] | [n|N][O|o] )
+		REDO="1";;
+	*)
+		REDO="0";;
+esac
+
+if [ "$REDO" = "1" ]; then
+	echo "Lets try this again then."
+	sleep 1
+	get_info
+fi
+
+if [ ! -d $REPO_PATH/device/$add_man ]; then
+	clear
+	echo "$REPO_PATH/device/$add_man doesn't exist, creating folder now."
+	sleep 2
+	mkdir -p $REPO_PATH/device/$add_man
+fi
+
+clear
+echo "Cloning $add_mod to $REPO_PATH/device/$add_man"
+sleep 1
+cd $REPO_PATH/device/$add_man
+#git clone $dev_repo_url $add_mod &>> /dev/null
+git clone $dev_repo_url $add_mod
+
+if [ ! -d $REPO_PATH/device/$add_man/$add_mod ]; then
+	echo "Something isn't right. Path isn't there anymore!"
+	exit 1
+fi
+
+echo "$REPO_PATH/device/$add_man/$add_mod" >> $CMC_DELETED
+clear
+echo "Your device is now located "$CLR"$REPO_PATH/device/$add_man/$add_mod"$toff""
+echo "You should be able to go and assign this manufacturer/model from
+the "$CLR"main menu!"$toff""
+read -sn 1 -p "Press any key to go back to main menu..."
+
+$MAIN

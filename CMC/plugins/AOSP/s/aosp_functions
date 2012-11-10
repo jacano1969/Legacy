@@ -1,0 +1,166 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+. $CMC_HOME/tools/f/compile_functions
+
+AOSP_GIT="https://android.googlesource.com/platform/manifest"
+DEFAULT_REPO_HOME="$HOME/Development/AOSP"
+
+function compile_aosp() {
+export WHICH_REPO=$(grep BRANCH $CMC_CONFIG |awk '{print $2}')
+
+if [ ! -z "$WHICH_REPO" ]; then
+	cd $REPO_PATH
+	. build/envsetup.sh
+	make installclean
+	lunch $DEVICE_MOD
+	STATUS=$(echo $?)
+	if [ "$STATUS" -ne "0" ]; then
+		echo "There was an error while building."
+		echo -ne "Do you want to try again? ("$CLR"Y"$toff"/n)"
+		echo -n "> "
+		read response
+		case $response in
+			y | Y )
+				cd $REPO_PATH
+				compile_aosp;;
+			n | N )
+				$MAIN;;
+		esac
+	fi
+	finish_the_repo
+else
+	clear
+	echo "There appears to be an issue with your configuration."
+	echo "Please look at $CMC_CONFIG."
+	sleep 2
+	$MAIN
+fi
+}
+
+function setup_aosp_repo() {
+if [ -f $TEMPA ]; then
+	rm -rf $TEMPA
+fi
+echo "Checking for repo installation..."
+CMC_CONFIG_REPO=$(grep REPO $CMC_CONFIG |awk '{print $2}')
+CHK_4_REPO=$(find $CMC_CONFIG_REPO -type d -iname .repo |wc -l)
+CMC_CONFIG_REPO_CHK=$(grep REPO $CMC_CONFIG |wc -l)
+if [ "$REPO_PATH" = "None" ] && [ "$FOUND_NUM" = "None" ];then
+	clear
+	echo "Looking for repo..."
+	CHK_4_REPO=$(find $CMC_CONFIG_REPO -type d -iname .repo |wc -l)
+	CHK_4_REPO_PATH=$(find $CMC_CONFIG_REPO -type d -iname .repo |cut -d"." -f"1")
+	if [ "$CHK_4_REPO" -eq "0" ]; then
+		echo "No found repos. Lets do this now."
+		echo "Please specify a repo path you would like:"
+		echo "Default: $DEFAULT_REPO_HOME"
+		echo "Default is only used when none is specified."
+		echo -ne "REPO: > "
+		read response
+		if [ ! -z "$response" ]; then
+			echo "Setting up $response as repo."
+			mkdir -p $response
+			echo "REPO: $response" >> $CMC_CONFIG
+			export REPO_PATH=$response
+		else
+			echo "Setting up a default repo for you here: $DEFAULT_REPO_HOME"
+			mkdir -p $DEFAULT_REPO_HOME
+			echo "REPO: $DEFAULT_REPO_HOME" >> $CMC_CONFIG
+			export REPO_PATH=$DEFAULT_REPO_HOME
+		fi
+		sleep 2
+	elif [ "$CHK_4_REPO" -eq "1" ]; then
+		clear
+		echo "Found repo: $CHK_4_REPO_PATH"
+		echo "REPO: $CHK_4_REPO_PATH" >> $CMC_CONFIG
+		export REPO_PATH=$CHK_4_REPO_PATH
+		sleep 2
+	elif [ "$CHK_4_REPO" -eq "1" ]; then
+		CHK_4_REPO_PATH_LIST="$CHK_4_REPO_PATH"
+		NUM=1
+		echo "Found mulitple repo paths:"
+		echo "$CHK_4_REPO_PATH_LIST"
+		for x in $CHK_4_REPO_PATH_LIST; do
+			echo "REPO_$NUM $x" >> $CMC_CONFIG
+			let NUM=NUM+1
+		done
+	fi	
+elif [ "$CMC_CONFIG_REPO_CHK" -eq "1" ] && [ "$CHK_4_REPO" -eq "0" ];then
+	clear
+	echo "Found $CMC_CONFIG_REPO in $CMC_CONFIG, but no repo, you will need a repo to use this."
+	echo "Are you sure you want to use this path? No will remove this entry!"
+	echo -n "( Y/n) default: yes > "
+	read response
+	case $response in
+		[nN] | [n|N][O|o] )
+			sed ""$(grep -n0 REPO $CMC_CONFIG |cut -d":" -f"1")"d" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+			$MAIN;;
+		*)
+			export REPO_PATH=$CMC_CONFIG_REPO
+			if [ ! -d $REPO_PATH ]; then
+				mkdir -p $REPO_PATH
+			fi
+	esac
+else
+	export REPO_PATH=$CMC_CONFIG_REPO
+fi
+
+clear
+if [ ! -f $REPO ]; then
+	curl -# $GOG_REPO > $REPO
+fi
+if [ -f $REPO ]; then
+	chmod a+x $REPO
+else
+	clear
+	echo "Couldn't link repo correctly. Check your internet and try again."
+	rm -rf $REPO >> $NULL
+	$MAIN
+fi
+cd $REPO_PATH
+clear
+
+SP_GIT=$AOSP_GIT
+get_sp_branch_list
+list_sp_branch
+LIST_BRANCH=$(cat $TMPX)
+D_BRANCH="android-4.0.3_r1"
+echo -e "Please choose the branch:
+Default is "$CLR"$D_BRANCH"$toff".
+
+$LIST_BRANCH"
+
+echo -n "> "
+read option
+process_branch_list
+
+clear
+echo -e "Branch is $BRANCH"
+echo -n "Press enter to continue..."
+read input
+case $input in
+	*)
+		CHK_BRANCH=$(grep BRANCH $CMC_CONFIG |wc -l)
+		if [ "$CHK_BRANCH" -eq "1" ]; then
+			sed ""$(grep -n0 BRANCH $CMC_CONFIG |cut -d":" -f"1")"d" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+			echo "BRANCH: $BRANCH" >> $CMC_CONFIG
+		elif [ "$CHK_BRANCH" -gt "1" ]; then
+			LIST_BRANCH=$(grep BRANCH $CMC_CONFIG | awk '{print $2}')
+			for i in $LIST_BRANCH; do
+				sed ""$(grep -n0 $i $CMC_CONFIG |cut -d":" -f"1")"d" $CMC_CONFIG > .tmp && mv .tmp $CMC_CONFIG
+			done
+			echo "BRANCH: $BRANCH" >> $CMC_CONFIG
+		elif [ "$CHK_BRANCH" -eq "0" ]; then
+			echo "BRANCH: $BRANCH" >> $CMC_CONFIG
+		else
+			echo "Branch config in $CMC_CONFIG isn't configured correctly"
+			exit 6
+		fi
+		clear
+		$REPO init -u $AOSP_GIT -b $BRANCH
+		clear
+		echo "Complete!. Please sync from the main menu!"
+		read -sn 1 -p "Press any key to continue..."
+esac
+rm -rf $TEMPA
+}

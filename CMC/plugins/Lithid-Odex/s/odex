@@ -1,0 +1,49 @@
+#!/system/bin/sh
+# Created by tommytomatoe
+# Heavily modified by Lithid (mrlithid@gmail.com)
+DC="/data/dalvik-cache"
+C="/cache/dalvik-cache"
+L="$DC $C"
+for x in $L; do
+	FL=$(ls $x |wc -l)
+	if [ "$FL" -gt "0" ]; then
+		rm $x/*;
+	fi
+done
+
+SF="/system/framework"
+FRAME=$(ls /system/framework |grep ".jar" |grep -v core |grep -v bouncycastle |grep -v ext |grep -v framework |grep -v android_policy |grep -v services |grep -v core-junit)
+odex_core_aosp_gb()
+{
+	dexopt-wrapper $SF/core.jar $SF/core.odex;
+	dexopt-wrapper $SF/bouncycastle.jar $SF/bouncycastle.odex
+	dexopt-wrapper $SF/ext.jar $SF/ext.odex;
+	dexopt-wrapper $SF/framework.jar $SF/framework.odex
+	dexopt-wrapper $SF/android.policy.jar $SF/android.policy.odex;
+	dexopt-wrapper $SF/services.jar $SF/services.odex;
+	dexopt-wrapper $SF/core-junit.jar $SF/core-junit.odex
+}
+
+odex_framework()
+{
+	for i in $FRAME
+		do
+			odex=`echo $i | sed -e 's/.jar/.odex/g'`
+			dexopt-wrapper $SF/$i $SF/$odex
+		done
+}
+
+odex_system()
+{
+	for i in /system/app/*.apk
+		do
+			odex=`echo $i | sed -e 's/.apk/.odex/g'`
+			dexopt-wrapper $i $odex
+		done
+}
+
+odex_core_aosp_gb;
+odex_framework;
+odex_system;
+
+exit;

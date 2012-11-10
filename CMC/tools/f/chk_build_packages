@@ -1,0 +1,43 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+
+. $CMC_HOME/tools/f/compile_functions
+
+export OSVER=$(grep OSVER $CMC_CONFIG |awk '{print $2}')
+CHK_OSVER=$(grep -c OSVER $CMC_CONFIG)
+SUP_OSVER=(Ubuntu Archlinux LinuxMint Other)
+BITS=$(uname -m)
+COUNT=0
+
+if [ "$CHK_OSVER" -eq "0" ]; then
+	clear
+	echo "What is your current os version?"
+	COUNT="0"
+	for x in ${SUP_OSVER[@]}; do
+		echo "${COUNT}) $x"
+		let COUNT=COUNT+1
+	done
+	echo -n "> "
+	read response
+	echo "OSVER: ${SUP_OSVER[$response]}" >>  $CMC_CONFIG
+	$SETUP
+fi
+
+export OSVER=$(grep OSVER $CMC_CONFIG |awk '{print $2}')
+if [ "$CHK_OSVER" -gt "0" ]; then
+	if [ "$OSVER" = "Ubuntu" ]; then # Ubuntu
+		. $CMC_FUNCTIONS/os_version/install_Ubuntu_packages --check
+	elif [ "$OSVER" = "Archlinux" ]; then # Archlinux
+		. $CMC_FUNCTIONS/os_version/install_Archlinux_packages --check
+	elif [ "$OSVER" = "LinuxMint" ]; then # LinuxMint
+		. $CMC_FUNCTIONS/os_version/install_LinuxMint_packages --check
+	elif [ "$OSVER" = "Other" ]; then # Other manual packages.
+		. $CMC_FUNCTIONS/os_version/install_Other_packages --check
+	else
+		echo "Could not detect your OS version."
+		$SETUP
+	fi
+else
+	echo "Something is wrong looking at your cmc-config file."
+	$SETUP
+fi

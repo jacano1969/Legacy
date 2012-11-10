@@ -1,0 +1,33 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+
+. $CMC_HOME/tools/f/compile_functions
+COUNT="0"
+
+if [ "$1" = "--check" ]; then
+	PKG_LIST=(abs base-devel)
+	for x in ${PKG_LIST[@]}; do
+		pacman -Q $x &>> /dev/null
+		if [ "$?" -ne "0" ]; then
+			let COUNT=COUNT+1
+		fi
+	done
+	PKG_LIST=(openjdk6 perl git gnupg flex bison gperf zip unzip sdl wxgtk squashfs-tools ncurses libpng zlib libusb libusb-compat readline)
+	for x in ${PKG_LIST[@]}; do
+		pacman -Q $x &>> /dev/null
+		if [ "$?" -ne "0" ]; then
+			let COUNT=COUNT+1
+		fi
+	done
+	if  [ "$COUNT" -gt "0" ]; then
+		export PKG_COUNT="${tred}Needs attention${toff}"
+	else
+		export PKG_COUNT="${CLR}Packages good${toff}"
+	fi
+elif [ "$1" = "--install" ]; then
+	clear
+	echo "This option doesn't work yet"
+	read -sn 1 -p "Press any key to go back to setup menu..."
+else
+	echo "Nope"
+fi

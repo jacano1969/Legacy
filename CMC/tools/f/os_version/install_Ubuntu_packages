@@ -1,0 +1,90 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+
+. $CMC_HOME/tools/f/compile_functions
+
+VER_NUM=$(lsb_release -r |awk '{print $2}')
+MISSING_TOOLS=$CMC_LOCAL/.MISSING_TOOLS
+
+if [ "$1" = "--check" ]; then
+	if [ -f $MISSING_TOOLS ]; then
+		rm -rf $MISSING_TOOLS
+	fi
+     	if [[ "$VER_NUM" = "10.04" ||\
+           	"$VER_NUM" = "10.10" ||\
+           	"$VER_NUM" = "11.04" ||\
+           	"$VER_NUM" = "11.10" ||\
+           	"$VER_NUM" = "12.04" ]]; then
+          	PKG_LIST=(git-core gnupg flex bison gperf libsdl1.2-dev libesd0-dev libwxgtk2.6-dev squashfs-tools build-essential zip curl libncurses5-dev zlib1g-dev openjdk-6-jdk pngcrush schedtool)
+        else
+		echo -e "Could not determine your Version Number. Recieved $VER_NUM"
+		$MAIN
+        fi
+
+	COUNT="0"
+
+	if [ "$BITS" = "x86_64" ]; then
+     		if [[ "$VER_NUM" = "10.04" || "$VER_NUM" = "10.10" ]]; then
+			PKG_LIST64=(g++-multilib lib32z1-dev lib32ncurses5-dev lib32readline5-dev gcc-4.3-multilib g++-4.3-multilib)
+		elif [ "$VER_NUM" = "11.04" ]; then
+			PKG_LIST64=(g++-multilib lib32z1-dev lib32ncurses5-dev lib32readline-gplv2-dev gcc-4.3-multilib g++-4.3-multilib)
+		elif [[ "$VER_NUM" = "11.10" || "$VER_NUM" = "12.04" ]]; then
+			PKG_LIST64=(g++-multilib lib32z1-dev lib32ncurses5-dev lib32readline-gplv2-dev)
+		else
+			echo -e "Could not determine your Version Number. Recieved $VER_NUM"
+			$MAIN
+		fi
+	else
+		unset PKG_LIST64
+	fi
+
+	for x in ${PKG_LIST[@]} ${PKG_LIST64[@]}; do
+		CHK=$(dpkg --get-selections $x 2> /dev/null |grep -v deinstall |grep -c install)
+		if [ "$CHK" -eq "1" ]; then
+			let COUNT=COUNT
+		else
+			if [ ! -f $MISSING_TOOLS ]; then
+				touch $MISSING_TOOLS
+			fi
+			echo "$x" >> $MISSING_TOOLS
+			let COUNT=COUNT+1
+		fi
+	done
+
+	if  [ "$COUNT" -gt "0" ]; then
+		export PKG_COUNT="Missing: ${tred}${COUNT}${toff} Packages"
+	else
+		export PKG_COUNT="${CLR}Packages good${toff}"
+	fi
+elif [ "$1" = "--install" ]; then
+	if [ -f $MISSING_TOOLS ]; then
+		LIST_MISSING=$(cat $MISSING_TOOLS)
+		clear
+		echo "We will now install these missing applications:"
+		echo "$LIST_MISSING"
+		echo
+		echo -e "Press ${tred}X${toff} to go back to setup menu"
+        	echo -n "Press any key to continue..."
+		read response
+		case $reponse in
+			x)
+			clear
+			echo "Going to setup menu...";;
+			*)
+			for x in $LIST_MISSING; do
+				sudo apt-get install -y $x
+			done			
+			clear
+			echo "All apps should be installed now..."
+			read -sn 1 -p "Press any key to go back to main menu...";;
+		esac
+	else
+		echo "Couldn\'t locate $MISSING_TOOLS"
+		read -sn 1 -p "Press any key to go back to main menu..."
+		if [ -f $MISSING_TOOLS ]; then
+			rm $MISSING_TOOLS
+		fi
+	fi
+else
+	echo "Nope"
+fi

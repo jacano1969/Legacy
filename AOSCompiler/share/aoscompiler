@@ -1,0 +1,393 @@
+#!/usr/bin/env python
+
+######################################################################
+# Python imports
+######################################################################
+import pygtk
+pygtk.require('2.0')
+
+import gtk
+import os
+import platform
+import sys
+import time
+import webbrowser
+import subprocess
+
+sys.path.append("/usr/share/aoscompiler")
+from aoscPy.About import About
+from aoscPy.Globals import Globals
+from aoscPy.Parser import Parser
+from aoscPy.Utils import Utils
+from aoscPy.Compile import Compile
+from aoscPy.Sync import Sync
+from aoscPy.Update import Update
+
+MAIN_VBOX = gtk.VBox(False, 0)
+toptable = gtk.Table(1, 3, False)
+tableB = gtk.Table(1, 2, False)
+optFrame = gtk.Frame()
+
+class advanced():
+
+	ASK_CONFIRM = Globals.AskConfirm
+	KEY_REPO_PATH = Globals.KeyRepoPath
+	TERM_FRAME_TABLE = Globals.TermFrameTable
+	STATUS_FRAME = Globals.StatusFrame
+	TOOLS_COMBO_LIST = Globals.ToolsComboList
+	KEY_WIN_X = Globals.KeyWinX
+	KEY_WIN_Y = Globals.KeyWinY
+	KEY_TERM_TOGGLE = Globals.KeyTermToggle
+	LINK_LIST = Globals.LinkList
+	TERM_FRAME_TABLE = Globals.TermFrameTable
+
+	toolsCombo = gtk.combo_box_new_text()
+	for i in TOOLS_COMBO_LIST:
+		toolsCombo.append_text(i)
+
+	romCombo = gtk.combo_box_new_text()
+	for i in ["AOSP", "CM", "AOKP", "CNA", "GR"]:
+		romCombo.append_text(i)
+
+	makeCombo = gtk.combo_box_new_text()
+	for i in range(1,Globals.PROCESSORS+1):
+		makeCombo.append_text(str(i))
+
+	syncCombo = gtk.combo_box_new_text()
+	for i in range(1,17):
+		syncCombo.append_text(str(i))
+ 
+	def main_quit(self, widget, event=None):
+		(x, y) = Globals.MAIN_WIN.get_position()
+		x = int(x)
+		y = int(y)
+		Parser().write(self.KEY_WIN_X, x)
+		Parser().write(self.KEY_WIN_Y, y)
+		gtk.main_quit()
+
+	def on_key_press(self, widget, data=None):
+		i = gtk.gdk.keyval_name(data.keyval)
+		if i == "v" and data.state & gtk.gdk.CONTROL_MASK:
+			Utils().ViewConfig()
+		elif i == "a" and data.state & gtk.gdk.CONTROL_MASK:
+			Utils().start_adb()
+		elif i == "m" and data.state & gtk.gdk.CONTROL_MASK:
+			Utils().ResetTerm()
+		elif i == "s" and data.state & gtk.gdk.CONTROL_MASK:
+			Sync().run()
+		elif i == "t" and data.state & gtk.gdk.CONTROL_MASK:
+			toggle_term_btn()
+		elif i == "b" and data.state & gtk.gdk.CONTROL_MASK:
+			Compile().run()
+		elif i == "r" and data.state & gtk.gdk.CONTROL_MASK:
+			Utils().choose_repo_path()
+		elif  i == "Escape":
+			self.main_quit(None, None)
+		else:
+			pass
+ 
+	# Main program
+	def main(self):
+
+		myMAIN_ICON = gtk.gdk.pixbuf_new_from_file(Globals.myICON)
+		Globals.MAIN_WIN.set_title(Globals.myMainTitle)
+		Globals.MAIN_WIN.set_icon(myMAIN_ICON)
+		x = Parser().read(self.KEY_WIN_X)
+		y = Parser().read(self.KEY_WIN_Y)
+		x = int(x)
+		y = int(y)
+		Globals.MAIN_WIN.move(x, y)
+		Globals.MAIN_WIN.connect("delete_event", self.main_quit)
+		Globals.MAIN_WIN.connect("key_press_event", self.on_key_press)
+		Globals.MAIN_WIN.set_events(gtk.gdk.KEY_PRESS_MASK)
+		Globals.MAIN_WIN.set_events(gtk.gdk.CONTROL_MASK)
+		Globals.MAIN_WIN.set_resizable(False)
+
+		toptable.show()
+		hbox = gtk.HBox(False, 10)
+		hbox.show()
+
+		resetFrame = gtk.Frame()
+		resetFrame.set_label_widget(Globals.resetLab)
+		resetImg = gtk.Image()
+		resetImg.set_from_file(Globals.DeviceImg)
+		Globals.resetBtn.set_image(resetImg)
+		Globals.resetBtn.connect("clicked", Utils().reset_button)
+		Globals.resetBtn.set_size_request(40, 25)
+		Globals.resetBtn.show()
+		resetFrame.add(Globals.resetBtn)
+		hbox.add(resetFrame)
+
+		toggleTermFrame = gtk.Frame()
+		toggleTermFrame.set_label_widget(Globals.toggleTermLab)
+		if Parser().read(self.KEY_TERM_TOGGLE) == True:
+			Globals.checkTermToggle.set_active(True)
+		else:
+			Globals.checkTermToggle.set_active(False)
+		Globals.checkTermToggle.connect("clicked", Utils().checked_term_toggle)
+		Globals.checkTermToggle.show()
+		toggleTermFrame.add(Globals.checkTermToggle)
+		hbox.add(toggleTermFrame)
+
+		toggleAdbFrame = gtk.Frame()
+		toggleAdbFrame.set_label_widget(Globals.toggleAdbLab)
+		Globals.checkAdbToggle.set_active(False)
+		Globals.checkAdbToggle.connect("clicked", Utils().checked_adb_toggle)
+		Globals.checkAdbToggle.show()
+		toggleAdbFrame.add(Globals.checkAdbToggle)
+		hbox.add(toggleAdbFrame)
+
+		toggleBashFrame = gtk.Frame()
+		toggleBashFrame.set_label_widget(Globals.toggleBashLab)
+		Globals.checkBashToggle.set_active(False)
+		Globals.checkBashToggle.connect("clicked", Utils().checked_bash_toggle)
+		Globals.checkBashToggle.show()
+		toggleBashFrame.add(Globals.checkBashToggle)
+		hbox.add(toggleBashFrame)
+
+		toptable.attach(hbox, 0, 1, 0, 1, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		toptable.attach(Globals.aoscTitleLab, 1, 2, 0, 1, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+
+		self.STATUS_FRAME.add(Globals.statusLab)
+		self.STATUS_FRAME.set_border_width(25)
+		self.STATUS_FRAME.set_label_widget(Globals.statusFrameLab)
+
+		TERM_FRAME = gtk.Frame()
+		TERM_FRAME.set_size_request(1058, 390)
+		TERM_FRAME.add(Globals.TERM)
+
+		self.TERM_FRAME_TABLE.attach(TERM_FRAME, 0, 1, 0, 1, xpadding=10)
+		self.TERM_FRAME_TABLE.hide()
+
+		Globals.KEY_BIND_INFO.show()
+		Globals.aoscTitleLab.show()
+
+		# Build options
+		self.toolsCombo.show()
+		self.toolsCombo.set_wrap_width(2)
+		self.toolsCombo.set_size_request(32, 25)
+		self.toolsCombo.connect("changed", Utils().tools_combo_change)
+
+		Globals.toolsLab.show()
+
+		self.romCombo.show()
+		self.romCombo.set_size_request(32, 25)
+		self.romCombo.connect("changed", Utils().rom_combo_change)
+
+		Globals.romLab.show()
+
+		aboutRomImg = gtk.Image()
+		aboutRomImg.set_from_file(Globals.ClobImg)
+		Globals.aboutRomBtn.set_image(aboutRomImg)
+		Globals.aboutRomBtn.connect("clicked", Utils().aboutRom)
+		Globals.aboutRomBtn.set_size_request(40, 25)
+		Globals.aboutRomBtn.show()
+
+		Globals.aboutRomLab.show()
+
+		branchImg = gtk.Image()
+		branchImg.set_from_file(Globals.ClobImg)
+		Globals.branchBtn.set_image(branchImg)
+		Globals.branchBtn.connect("clicked", Utils().choose_branch)
+		Globals.branchBtn.set_size_request(40, 25)
+		Globals.branchBtn.show()
+
+		Globals.branchLab.show()
+
+		DevImg = gtk.Image()
+		DevImg.set_from_file(Globals.DeviceImg)
+		Globals.DEV_BTN.set_image(DevImg)
+		Globals.DEV_BTN.connect("clicked", Utils().device_button)
+		Globals.DEV_BTN.set_size_request(40, 25)
+		Globals.DEV_BTN.show()
+
+		Globals.deviceLab.show()
+
+		self.syncCombo.show()
+		self.syncCombo.set_wrap_width(4)
+		self.syncCombo.set_size_request(32, 25)
+		self.syncCombo.connect("changed", Utils().sync_combo_change)
+
+		Globals.syncjobsLab.show()
+
+		self.makeCombo.show()
+		self.makeCombo.set_wrap_width(4)
+		self.makeCombo.set_size_request(32, 25)
+		self.makeCombo.connect("changed", Utils().compile_combo_change)
+
+		Globals.makeLab.show()
+
+		optTable = gtk.Table(2, 1, False)
+		optTable.show()
+		optTable.attach(self.romCombo, 0, 1, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.romLab, 0, 1, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.aboutRomBtn, 1, 2, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.aboutRomLab, 1, 2, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.branchBtn, 2, 3, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.branchLab, 2, 3, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.DEV_BTN, 3, 4, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.deviceLab, 3, 4, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(self.syncCombo, 4, 5, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.syncjobsLab, 4, 5, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(self.makeCombo, 5, 6, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.makeLab, 5, 6, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(self.toolsCombo, 6, 7, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.attach(Globals.toolsLab, 6, 7, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		optTable.set_border_width(5)
+		optFrame.add(optTable)
+		Globals.buildFrameLab.show()
+		opthbox = gtk.HBox(False, 5)
+		opthbox.show()
+		optFrame.set_label_widget(Globals.buildFrameLab)
+		optFrame.set_size_request(900, 75)
+		optFrame.show()
+		opthbox.pack_start(optFrame, True, True, 91)
+
+		# Build Frame
+		Globals.checkCompile.set_active(False)
+		Globals.checkCompile.show()
+
+		Globals.compileLab.show()
+
+		Globals.checkSync.set_active(False)
+		Globals.checkSync.show()
+
+		Globals.syncLab.show()
+
+		Globals.checkClobber.set_active(False)
+		Globals.checkClobber.show()
+
+		Globals.clobberLab.show()
+
+		runImg = gtk.Image()
+		runImg.set_from_file(Globals.ClobImg)
+		Globals.runBtn.set_image(runImg)
+		Globals.runBtn.connect("clicked", Utils().run_button)
+		Globals.runBtn.set_size_request(40, 25)
+		Globals.runBtn.show()
+
+		Globals.runLab.show()
+
+		buildTable = gtk.Table(2, 1, False)
+		buildTable.show()
+		buildTable.attach(Globals.checkCompile, 0, 1, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.attach(Globals.compileLab, 0, 1, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.attach(Globals.checkSync, 1, 2, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.attach(Globals.syncLab, 1, 2, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.attach(Globals.checkClobber, 2, 3, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.attach(Globals.clobberLab, 2, 3, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.attach(Globals.runBtn, 3, 4, 0, 1, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.attach(Globals.runLab, 3, 4, 1, 2, xpadding=15, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		buildTable.set_border_width(5)
+		buildFrame = gtk.Frame()
+		buildFrame.add(buildTable)
+		buildFrame.set_shadow_type(gtk.SHADOW_NONE)
+		Globals.runFrameLab.show()
+		buildFrame.set_label_widget(Globals.runFrameLab)
+		buildFrame.show()
+
+		# Entrybox stuff
+		tableEntry = gtk.Table(1, 2, False)
+		tableEntry.show()
+
+		Globals.packageEntryBox.show()
+		Globals.packageEntryBox.connect("activate", Utils().run_vt_command)
+
+		Globals.build_appLab.show()
+
+		tableEntry.attach(Globals.packageEntryBox, 0, 1, 0, 1, ypadding=5, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		tableEntry.attach(Globals.build_appLab, 0, 1, 1, 2, xoptions=gtk.EXPAND)
+		tableEntry.set_border_width(5)
+
+		Globals.LinkContact.show()
+
+		# Link footer stuff
+		LinksTable = gtk.Table(2, 1, False)
+		LinksTable.show()
+
+		SpacerLinkR = gtk.Label()
+		SpacerLinkR.show()
+
+		SpacerLinkL = gtk.Label()
+		SpacerLinkL.show()
+
+		count = 0
+		for i in self.LINK_LIST:
+			count+=1
+			name = "%s/%s.png" % (Globals.myIMGS, i)
+			image = gtk.Image()
+			image.set_from_file(name)
+			image.show()
+			event = gtk.EventBox()
+			event.connect("button_press_event", Utils().press_link_button, i)
+			event.add(image)
+			event.set_size_request(26, 26)
+			event.show()
+			tooltip = gtk.Tooltips()
+			tooltip.set_tip(event, i)
+			LinksTable.attach(event, count-1, count, 0, 1,)
+
+		linksFrame = gtk.Frame()
+		linksFrame.add(LinksTable)
+		linksFrame.set_size_request(300, 75)
+		Globals.contactFrameLab.show()
+		linksFrame.set_label_widget(Globals.contactFrameLab)
+		linksFrame.set_shadow_type(gtk.SHADOW_NONE)
+		linksFrame.show()
+
+		# Main button table
+		tableB.show()
+
+		tableB.attach(buildFrame, 0, 1, 0, 1, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		tableB.attach(tableEntry, 1, 2, 0, 1, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+		tableB.attach(linksFrame, 2, 3, 0, 1, xoptions=gtk.EXPAND, yoptions=gtk.EXPAND)
+
+		MAIN_VBOX.pack_start(toptable, False, False, 0)
+		MAIN_VBOX.pack_start(self.STATUS_FRAME, True, True, 0)
+		MAIN_VBOX.pack_start(self.TERM_FRAME_TABLE, True, True, 0)
+		MAIN_VBOX.pack_start(opthbox, True, True, 0)
+		MAIN_VBOX.pack_start(tableB, True, True, 0)
+		MAIN_VBOX.pack_start(Globals.KEY_BIND_INFO, False, False, 10)
+
+		Update().background()
+
+		Globals.MAIN_WIN.add(MAIN_VBOX)
+		Globals.MAIN_WIN.show_all()
+		Update().widgets()
+		Update().main(None)
+		gtk.main()
+
+def main():
+	gtk.main()
+	return 0
+
+if __name__ == "__main__":
+
+	A = advanced()
+
+	Utils().chk_config()
+	
+	if not os.path.exists(Globals.myCONF):
+		Parser().write("branch", None)
+
+	Parser().write("verbose", False)
+	if len(sys.argv) is 2:
+		if sys.argv[1] in ("-v", "--verbose"):
+			Parser().write("verbose", True)
+		else:
+			print "Got %s arguments, but not \"-v\" or \"--verbose\". Leaving" % len(sys.argv)
+			exit(1)
+	elif len(sys.argv) is 1:
+		pass
+	else:
+		print "Got %s arguments, only need 1. Leaving" % len(sys.argv)
+		exit(1)
+
+	if not os.path.exists(Globals.myDEF_REPO_PATH):
+		os.mkdir(Globals.myDEF_REPO_PATH)
+	
+	if not os.path.exists(A.ASK_CONFIRM):
+		Utils().get_askConfirm()
+
+	A.main()
+

@@ -1,0 +1,47 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+# update_cmc  by ak_hepcat (ak.hepcat@gmail.com)
+if [ -z "${CMC_FUNCTIONS}" ];
+then
+	. $CMC_HOME/tools/f/compile_functions
+fi
+
+. $CMC_HOME/tools/f/compile_functions
+
+clear
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} :: Main :: ${CLR}Update CyanogenMod Compiler${toff} >>>
+
+	${CLR}Y${toff}/n) This will attempt to update the CyanogenMod Compiler in-place.
+	The script will not update if no changes are detected.	Should we proceed with this?
+	
+	CMC Updates: $UPDATE_MSG
+
+	${CLR}Note:${toff}
+	Default is yes type \"n\" or \"no\" to stop this from happening.
+	You can also press \"0\" to return to the main menu without changes.
+	-----
+	${CLR}B${toff}) back to main menu
+	${CLR}X${toff}) exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue (${CLR}Y${toff}/n)"
+echo -n "> "
+
+read option
+case $option in
+	[nN] | [n|N][O|o] )
+		clear
+		echo "Not updating the CM repo!"
+		sleep 2
+		$MAIN;;
+	b|B)
+		$MAIN;;
+	x|X)
+		echo "Goodbye!"
+		exit 0;;
+	*)
+		. $CMC_FUNCTIONS/update_cmc
+		# Get time to read reposync_update messages
+		read -sn 1 -p "Press any key to go back to main menu..."
+		$MAIN;;
+esac

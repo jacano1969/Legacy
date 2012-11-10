@@ -1,0 +1,43 @@
+#!/bin/bash
+# Written by lithid (mrlithid@gmail.com)
+$CMC_HOME/tools/f/compile_functions
+LITHID_HOME="$CMC_PLUGINS/Add-Unsupported-Device"
+chk_cmc_config
+chk_adb_running
+
+clear
+echo -e "<<< ${CLR}Cyanogenmod Compiler${toff} :: Main :: Plugins :: ${CLR}Add-Unsupported-Device${toff} >>>
+Repos Found: ${CLR}$FOUND_NUM${toff}
+
+	${CLR}Y${toff}/n) This will add a device that is unsupported into the cm repo.
+	You will be asked 3 questions. I can't held responsible for what you input and
+	do from here on out. "$tred"Proceed on your own free will!${toff}
+
+	${CLR}Note:${toff}
+	Default is yes type \"n\" or \"no\" to stop this from happening.
+	You can also press \"X\" to return to the main menu without changes.
+	-----
+	${CLR}B${toff}) back to plugins
+	${CLR}X${toff}) exit
+
+Device Info: ${CLR}$DEVICE_MAN${toff}/${CLR}$DEVICE_MOD${toff} ADB: $ADB_MSG
+Please choose an option to continue (${CLR}Y${toff}/n)"
+echo -n "> "
+
+read option
+case $option in
+	[nN] | [n|N][O|o] )
+		MSG="Nothing has been done!"
+		chk_tmp
+		sleep 1
+		. $CMC_HOME/menu_items/run_plugins.menu;;
+	b|B)
+		chk_tmp
+		. $CMC_HOME/menu_items/run_plugins.menu;;
+	x|X)
+		echo "Goodbye!"
+		chk_tmp
+		exit 1;;
+	*)
+		. $LITHID_HOME/s/add-unsupported-device;;
+esac
